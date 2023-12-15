@@ -16,7 +16,10 @@ char serverResponse[MESSAGE_LENGTH];
 void Register(const int& fd, const std::string& username, const std::string& password);
 bool Login(const int& fd, const std::string& username, const std::string& password);
 void LoginMenu(const int& fd, string& _currentUser, bool& status);
-void UserMenu(const string& _currentUser, bool& status);
+void UserMenu(const int& fd, string& _currentUser, bool& status);
+void LogOut(string& _currentUser, bool& status);
+void DeleteUser(const int& fd, string& _currentUser, bool& status);
+
 
 void Register(const int& fd, const std::string& username, const std::string& password)
 {
@@ -88,6 +91,45 @@ bool Login(const int& fd, const std::string& username, const std::string& passwo
     }
 }
 
+void LogOut(string& _currentUser, bool& status)
+{
+    _currentUser = "";
+    status = false;
+}
+
+void DeleteUser(const int& fd, string& _currentUser, bool& status)
+{
+    std::cout << "Deleting user " << _currentUser << std::endl;
+    std::string UID = "000#UIDB#" + _currentUser;
+    std::cout << "UID: " << UID << std::endl;
+
+    bzero(clientRequest, sizeof(clientRequest)); 
+    strncpy(clientRequest, UID.c_str(), sizeof(clientRequest));       
+  
+    ssize_t bytes = send(fd, clientRequest, sizeof(clientRequest), 0);
+    if (bytes >= 0)
+        {
+               std::cout << "Data was sent successfuly!\n";
+        }
+    
+    bzero(serverResponse, sizeof(serverResponse));
+    bytes = recv(fd, serverResponse, sizeof(serverResponse), 0);
+    if (bytes >= 0)
+    {
+        std::cout << "Received response from server: " << bytes << std::endl;
+    }
+
+    if (strncmp("0001", serverResponse, 4) == 0)
+    {
+        std::cout << "User has been deleted!\n";     
+        status = false;                 
+    }    
+    else 
+    {
+        std::cout << "Failed to delete user!\n";
+    }
+}
+
 void LoginMenu(const int& fd, string& _currentUser, bool& status)
 {
     std::string username, password;
@@ -137,7 +179,7 @@ void LoginMenu(const int& fd, string& _currentUser, bool& status)
         break;
     }
 }
-void UserMenu(const string& _currentUser, bool& status)
+void UserMenu(const int& fd, string& _currentUser, bool& status)
 {
     string username, password;
     int menuOperator;
@@ -164,22 +206,20 @@ void UserMenu(const string& _currentUser, bool& status)
         //CreateMessage(_UserDB, _ChatDB, _currentUser);
         break;
     case 3:
-        std::cout << "You has logout\n";
-        //Logout(_currentUser, status);
+        std::cout << "You have loged out\n";
+        LogOut(_currentUser, status);
         break;
     case 4:
     {
         std::cout << "Are you sure you want to delete your user?(Y/N): ";
         char choise = 'Y';        
         std::cin >> choise;
-        /*
+        
         if (toupper(choise) == 'Y')
         {
-            DeleteUser(_currentUser, _UserDB, status);
-            std::cout << "User has been successfuly deleted!\n";
-            break;
-        } 
-        */       
+            DeleteUser(fd, _currentUser, status);            
+            break;         
+        }
         break;
     }
     case 5:
