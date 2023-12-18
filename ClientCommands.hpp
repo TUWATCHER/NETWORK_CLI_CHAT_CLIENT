@@ -2,6 +2,7 @@
 
 #include <string>
 #include <iostream>
+#include <limits>
 #include <sys/socket.h>
 #include <inttypes.h>
 
@@ -19,7 +20,7 @@ void LoginMenu(const int& fd, string& _currentUser, bool& status);
 void UserMenu(const int& fd, string& _currentUser, bool& status);
 void LogOut(string& _currentUser, bool& status);
 void DeleteUser(const int& fd, string& _currentUser, bool& status);
-
+void SendMessage(const int& fd, string& fromUser);
 
 void Register(const int& fd, const std::string& username, const std::string& password)
 {
@@ -130,6 +131,45 @@ void DeleteUser(const int& fd, string& _currentUser, bool& status)
     }
 }
 
+void SendMessage(const int &fd, string &fromUser)
+{
+    string toUser, message, clientMessage;
+
+    std::cout << "Enter recepient: ";
+    std::cin >> toUser;
+    std::cout << "Enter message: \n";
+    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+    std::getline(std::cin, message);
+    clientMessage = "200#FROM#" + fromUser + 
+                    "#TO#" + toUser +
+                    "#MSG#" + message; 
+
+    bzero(clientRequest, sizeof(clientRequest));
+    strncpy(clientRequest, clientMessage.c_str(), sizeof(clientRequest));
+
+    ssize_t bytes = send(fd, clientRequest, sizeof(clientRequest), 0);
+    if (bytes >= 0)
+        {
+               std::cout << "Data was sent successfuly!\n";
+        }
+    
+    bzero(serverResponse, sizeof(serverResponse));
+    bytes = recv(fd, serverResponse, sizeof(serverResponse), 0);
+    if (bytes >= 0)
+    {
+        std::cout << "Received response from server: " << bytes << std::endl;
+    }
+
+    if (strncmp("2001", serverResponse, 4) == 0)
+    {
+        std::cout << "Message has been sent!\n";                      
+    }    
+    else 
+    {
+        std::cout << "Failed to send message!\n";
+    }
+}
+
 void LoginMenu(const int& fd, string& _currentUser, bool& status)
 {
     std::string username, password;
@@ -203,7 +243,7 @@ void UserMenu(const int& fd, string& _currentUser, bool& status)
         break;
     case 2:
         std::cout << "Send message\n";
-        //CreateMessage(_UserDB, _ChatDB, _currentUser);
+        SendMessage(fd, _currentUser);
         break;
     case 3:
         std::cout << "You have loged out\n";
