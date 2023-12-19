@@ -20,7 +20,8 @@ void LoginMenu(const int& fd, string& _currentUser, bool& status);
 void UserMenu(const int& fd, string& _currentUser, bool& status);
 void LogOut(string& _currentUser, bool& status);
 void DeleteUser(const int& fd, string& _currentUser, bool& status);
-void SendMessage(const int& fd, string& fromUser);
+void SendMessage(const int& fd, const string& fromUser);
+void CheckMessage(const int& fd, const string& _currentUser);
 
 void Register(const int& fd, const std::string& username, const std::string& password)
 {
@@ -131,7 +132,7 @@ void DeleteUser(const int& fd, string& _currentUser, bool& status)
     }
 }
 
-void SendMessage(const int &fd, string &fromUser)
+void SendMessage(const int &fd, const string &fromUser)
 {
     string toUser, message, clientMessage;
 
@@ -149,9 +150,9 @@ void SendMessage(const int &fd, string &fromUser)
 
     ssize_t bytes = send(fd, clientRequest, sizeof(clientRequest), 0);
     if (bytes >= 0)
-        {
+    {
                std::cout << "Data was sent successfuly!\n";
-        }
+    }
     
     bzero(serverResponse, sizeof(serverResponse));
     bytes = recv(fd, serverResponse, sizeof(serverResponse), 0);
@@ -168,6 +169,25 @@ void SendMessage(const int &fd, string &fromUser)
     {
         std::cout << "Failed to send message!\n";
     }
+}
+
+void CheckMessage(const int &fd, const string &_currentUser)
+{
+    std::string MSG = "210#UIDB#" + _currentUser;
+
+    bzero(clientRequest, sizeof(clientRequest));
+    strncpy(clientRequest, MSG.c_str(), sizeof(clientRequest));
+
+    ssize_t bytes = send(fd, clientRequest, sizeof(clientRequest), 0);
+    if (bytes >= 0)
+    {
+               std::cout << "Data was sent successfuly!\n";
+    }
+    
+        bzero(serverResponse, sizeof(serverResponse));
+        recv(fd, serverResponse, sizeof(serverResponse), 0);
+        std::cout << serverResponse;   
+    
 }
 
 void LoginMenu(const int& fd, string& _currentUser, bool& status)
@@ -239,7 +259,7 @@ void UserMenu(const int& fd, string& _currentUser, bool& status)
         break;
     case 1:
         std::cout << "Messages: \n";
-        //ShowMessage(_ChatDB, _currentUser);
+        CheckMessage(fd, _currentUser);
         break;
     case 2:
         std::cout << "Send message\n";
@@ -271,17 +291,4 @@ void UserMenu(const int& fd, string& _currentUser, bool& status)
         break;
     }
 
-}
-int32_t S32(const char *s)
-{
-  int32_t i;
-  char c ;
-  int scanned = sscanf(s, "%" SCNd32 "%c", &i, &c);
-  if (scanned == 1) return i;
-  if (scanned > 1) {
-    // TBD about extra data found
-    return i;
-    }
-  // TBD failed to scan;  
-  return 0;  
 }
