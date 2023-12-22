@@ -1,12 +1,12 @@
-#include "CLIClient.h"
+#include "CLIClient.hpp"
 
 int main()
 {
+    std::string addr = "172.16.8.129";
     bool hasLoggedIn = false;
-    std::string currentUser;
+    std::string currentUser = "";
 
-    Connect(currentUser, hasLoggedIn);
+    Connect(currentUser, hasLoggedIn, addr);
 
-    std::cout << "CURRENT USER: " << currentUser << std::endl;
     return 0;
 }
