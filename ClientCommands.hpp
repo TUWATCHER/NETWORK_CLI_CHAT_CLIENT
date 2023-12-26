@@ -22,6 +22,7 @@ void LogOut(string& _currentUser, bool& status);
 void DeleteUser(const int& fd, string& _currentUser, bool& status);
 void SendMessage(const int& fd, const string& fromUser);
 void CheckMessage(const int& fd, const string& _currentUser);
+void ShowUsers(const int& fd);
 
 void Register(const int& fd, const std::string& username, const std::string& password)
 {
@@ -181,13 +182,29 @@ void CheckMessage(const int &fd, const string &_currentUser)
     ssize_t bytes = send(fd, clientRequest, sizeof(clientRequest), 0);
     if (bytes >= 0)
     {
-               std::cout << "Data was sent successfuly!\n";
+        std::cout << "Data was sent successfuly!\n";
     }
     
-        bzero(serverResponse, sizeof(serverResponse));
-        recv(fd, serverResponse, sizeof(serverResponse), 0);
-        std::cout << serverResponse;   
+    bzero(serverResponse, sizeof(serverResponse));
+    recv(fd, serverResponse, sizeof(serverResponse), 0);
+    std::cout << serverResponse;   
     
+}
+
+void ShowUsers(const int & fd)
+{
+    bzero(clientRequest, sizeof(clientRequest));
+    strncpy(clientRequest, "500", sizeof(clientRequest));
+
+    ssize_t bytes = send(fd, clientRequest, sizeof(clientRequest), 0);
+    if (bytes >= 0)
+    {
+        std::cout << "Data was sent successfuly!\n";
+    }
+    
+    bzero(serverResponse, sizeof(serverResponse));
+    recv(fd, serverResponse, sizeof(serverResponse), 0);
+    std::cout << serverResponse;
 }
 
 void LoginMenu(const int& fd, string& _currentUser, bool& status)
@@ -247,9 +264,10 @@ void UserMenu(const int& fd, string& _currentUser, bool& status)
     std::cout << "Welcome user: " << _currentUser << "\nPlease choose your option:\n";
     std::cout << "\t1 - Show Messages\n"
         << "\t2 - Send Message\n"
-        << "\t3 - Logout\n"
+        << "\t3 - Show Users\n"
         << "\t4 - Delete User\n"
         << "\t5 - Change Password\n"
+        << "\t6 - Logout\n"
         << "\t0 - Exit\n";
     std::cin >> menuOperator;
     switch (menuOperator)
@@ -258,17 +276,23 @@ void UserMenu(const int& fd, string& _currentUser, bool& status)
         Terminator = true;
         break;
     case 1:
+    {
         std::cout << "Messages: \n";
         CheckMessage(fd, _currentUser);
         break;
+    }
     case 2:
+    {
         std::cout << "Send message\n";
         SendMessage(fd, _currentUser);
         break;
+    }
     case 3:
-        std::cout << "You have loged out\n";
-        LogOut(_currentUser, status);
+    {
+        std::cout << "Registered users: \n";
+        ShowUsers(fd);
         break;
+    }
     case 4:
     {
         std::cout << "Are you sure you want to delete your user?(Y/N): ";
@@ -283,9 +307,17 @@ void UserMenu(const int& fd, string& _currentUser, bool& status)
         break;
     }
     case 5:
+    {
         std::cout << "Please enter old password: ";
         std::cin >> password;
         break;
+    }
+    case 6:
+    {
+        std::cout << "You have loged out\n";
+        LogOut(_currentUser, status);
+        break;
+    }
     default:
         std::cout << "Wrong statement!\n";
         break;
