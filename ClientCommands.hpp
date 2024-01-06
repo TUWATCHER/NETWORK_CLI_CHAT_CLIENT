@@ -5,6 +5,7 @@
 #include <limits>
 #include <sys/socket.h>
 #include <inttypes.h>
+#include "Logger.hpp"
 
 #define MESSAGE_LENGTH 1024
 
@@ -13,6 +14,8 @@ using std::string;
 static bool Terminator = false;
 char clientRequest[MESSAGE_LENGTH];
 char serverResponse[MESSAGE_LENGTH];
+string logfile = "log.txt";
+Logger log(logfile);
 
 void Register(const int& fd, const std::string& username, const std::string& password);
 bool Login(const int& fd, const std::string& username, const std::string& password);
@@ -164,7 +167,8 @@ void SendMessage(const int &fd, const string &fromUser)
 
     if (strncmp("2001", serverResponse, 4) == 0)
     {
-        std::cout << "Message has been sent!\n";                      
+        std::cout << "Message has been sent!\n";
+        log.writeLog("Message has been sent!\n");                     
     }    
     else 
     {
@@ -268,6 +272,7 @@ void UserMenu(const int& fd, string& _currentUser, bool& status)
         << "\t4 - Delete User\n"
         << "\t5 - Change Password\n"
         << "\t6 - Logout\n"
+        << "\t7 - Read Log\n"
         << "\t0 - Exit\n";
     std::cin >> menuOperator;
     switch (menuOperator)
@@ -316,6 +321,11 @@ void UserMenu(const int& fd, string& _currentUser, bool& status)
     {
         std::cout << "You have loged out\n";
         LogOut(_currentUser, status);
+        break;
+    }
+    case 7:
+    {
+        log.readLog();
         break;
     }
     default:
