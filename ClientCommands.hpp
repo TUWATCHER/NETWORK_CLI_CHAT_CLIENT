@@ -5,6 +5,7 @@
 #include <limits>
 #include <sys/socket.h>
 #include <inttypes.h>
+#include <ctime>
 #include "Logger.hpp"
 
 #define MESSAGE_LENGTH 1024
@@ -26,6 +27,8 @@ void DeleteUser(const int& fd, string& _currentUser, bool& status);
 void SendMessage(const int& fd, const string& fromUser);
 void CheckMessage(const int& fd, const string& _currentUser);
 void ShowUsers(const int& fd);
+std::string timestamp();
+
 
 void Register(const int& fd, const std::string& username, const std::string& password)
 {
@@ -51,15 +54,19 @@ void Register(const int& fd, const std::string& username, const std::string& pas
 
     if (strncmp("1010", serverResponse, 4) == 0)
     {
-        std::cout << "User failed to Register!\n";                        
+        std::cout << "User failed to Register!\n";
+        log.writeLog(timestamp() + " User failed to Register!\n");
+                              
     }
     else if (strncmp("1011", serverResponse, 4) == 0)
     {
-        std::cout << "User registered successfully!\n";                        
+        std::cout << "User registered successfully!\n";
+        log.writeLog(timestamp() + " User registered successfully!\n");                
     }
     else 
     {
         std::cout << "Failed to parse response from server\n";
+        log.writeLog(timestamp() + " Failed to parse response from server\n"); 
     }
 }
 bool Login(const int& fd, const std::string& username, const std::string& password)
@@ -88,6 +95,7 @@ bool Login(const int& fd, const std::string& username, const std::string& passwo
     if (strncmp("1111", serverResponse, 4) == 0)
     {
         std::cout << "User has logged in!\n";
+        log.writeLog(timestamp() + " User has logged in!\n");
         return true;                      
     }    
     else 
@@ -101,6 +109,7 @@ void LogOut(string& _currentUser, bool& status)
 {
     _currentUser = "";
     status = false;
+    log.writeLog(timestamp() + " User has logged out!\n");
 }
 
 void DeleteUser(const int& fd, string& _currentUser, bool& status)
@@ -127,12 +136,14 @@ void DeleteUser(const int& fd, string& _currentUser, bool& status)
 
     if (strncmp("0001", serverResponse, 4) == 0)
     {
-        std::cout << "User has been deleted!\n";     
+        std::cout << "User has been deleted!\n";
+        log.writeLog(timestamp() + " User has been deleted!\n");  
         status = false;                 
     }    
     else 
     {
         std::cout << "Failed to delete user!\n";
+        log.writeLog(timestamp() + "Failed to delete user!\n");
     }
 }
 
@@ -168,11 +179,12 @@ void SendMessage(const int &fd, const string &fromUser)
     if (strncmp("2001", serverResponse, 4) == 0)
     {
         std::cout << "Message has been sent!\n";
-        log.writeLog("Message has been sent!\n");                     
+        log.writeLog(timestamp() + " Message has been sent!\n");                     
     }    
     else 
     {
         std::cout << "Failed to send message!\n";
+        log.writeLog(timestamp() + " Failed to send message!\n");
     }
 }
 
@@ -209,6 +221,14 @@ void ShowUsers(const int & fd)
     bzero(serverResponse, sizeof(serverResponse));
     recv(fd, serverResponse, sizeof(serverResponse), 0);
     std::cout << serverResponse;
+}
+
+inline std::string timestamp()
+{
+    std::time_t time_now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+    std::string timestring = std::ctime(&time_now );
+    timestring.erase(timestring.find('\n', 0), 1);
+    return timestring;
 }
 
 void LoginMenu(const int& fd, string& _currentUser, bool& status)
