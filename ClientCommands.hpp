@@ -7,6 +7,8 @@
 #include <inttypes.h>
 #include <ctime>
 #include "Logger.hpp"
+#include <thread>
+#include <chrono>
 
 #define MESSAGE_LENGTH 1024
 
@@ -60,13 +62,11 @@ void Register(const int& fd, const std::string& username, const std::string& pas
     }
     else if (strncmp("1011", serverResponse, 4) == 0)
     {
-        std::cout << "User registered successfully!\n";
-        log.writeLog(timestamp() + " User registered successfully!\n");                
+        std::cout << "User registered successfully!\n";                      
     }
     else 
     {
-        std::cout << "Failed to parse response from server\n";
-        log.writeLog(timestamp() + " Failed to parse response from server\n"); 
+        std::cout << "Failed to parse response from server\n";        
     }
 }
 bool Login(const int& fd, const std::string& username, const std::string& password)
@@ -94,8 +94,7 @@ bool Login(const int& fd, const std::string& username, const std::string& passwo
 
     if (strncmp("1111", serverResponse, 4) == 0)
     {
-        std::cout << "User has logged in!\n";
-        log.writeLog(timestamp() + " User has logged in!\n");
+        std::cout << "User has logged in!\n";        
         return true;                      
     }    
     else 
@@ -108,14 +107,13 @@ bool Login(const int& fd, const std::string& username, const std::string& passwo
 void LogOut(string& _currentUser, bool& status)
 {
     _currentUser = "";
-    status = false;
-    log.writeLog(timestamp() + " User has logged out!\n");
+    status = false;    
 }
 
 void DeleteUser(const int& fd, string& _currentUser, bool& status)
 {
     std::cout << "Deleting user " << _currentUser << std::endl;
-    std::string UID = "000#UIDB#" + _currentUser;
+    std::string UID = "999#UIDB#" + _currentUser;
     std::cout << "UID: " << UID << std::endl;
 
     bzero(clientRequest, sizeof(clientRequest)); 
@@ -134,16 +132,14 @@ void DeleteUser(const int& fd, string& _currentUser, bool& status)
         std::cout << "Received response from server: " << bytes << std::endl;
     }
 
-    if (strncmp("0001", serverResponse, 4) == 0)
+    if (strncmp("9991", serverResponse, 4) == 0)
     {
-        std::cout << "User has been deleted!\n";
-        log.writeLog(timestamp() + " User has been deleted!\n");  
+        std::cout << "User has been deleted!\n";        
         status = false;                 
     }    
     else 
     {
-        std::cout << "Failed to delete user!\n";
-        log.writeLog(timestamp() + "Failed to delete user!\n");
+        std::cout << "Failed to delete user!\n";        
     }
 }
 
@@ -178,33 +174,35 @@ void SendMessage(const int &fd, const string &fromUser)
 
     if (strncmp("2001", serverResponse, 4) == 0)
     {
-        std::cout << "Message has been sent!\n";
-        log.writeLog(timestamp() + " Message has been sent!\n");                     
+        std::cout << "Message has been sent!\n";                           
     }    
     else 
     {
-        std::cout << "Failed to send message!\n";
-        log.writeLog(timestamp() + " Failed to send message!\n");
+        std::cout << "Failed to send message!\n";        
     }
 }
 
 void CheckMessage(const int &fd, const string &_currentUser)
+{   
+     
+        std::string MSG = "210#UIDB#" + _currentUser;
+
+        bzero(clientRequest, sizeof(clientRequest));
+        strncpy(clientRequest, MSG.c_str(), sizeof(clientRequest));
+
+        send(fd, clientRequest, sizeof(clientRequest), 0);        
+        
+        bzero(serverResponse, sizeof(serverResponse));
+        recv(fd, serverResponse, sizeof(serverResponse), 0);
+        //std::cout << serverResponse;
+        log.writeLog(serverResponse);
+        bzero(serverResponse, sizeof(serverResponse));
+      
+    
+}
+void ReadMessage()
 {
-    std::string MSG = "210#UIDB#" + _currentUser;
-
-    bzero(clientRequest, sizeof(clientRequest));
-    strncpy(clientRequest, MSG.c_str(), sizeof(clientRequest));
-
-    ssize_t bytes = send(fd, clientRequest, sizeof(clientRequest), 0);
-    if (bytes >= 0)
-    {
-        std::cout << "Data was sent successfuly!\n";
-    }
-    
-    bzero(serverResponse, sizeof(serverResponse));
-    recv(fd, serverResponse, sizeof(serverResponse), 0);
-    std::cout << serverResponse;   
-    
+    log.readLog();
 }
 
 void ShowUsers(const int & fd)
@@ -283,10 +281,10 @@ void LoginMenu(const int& fd, string& _currentUser, bool& status)
 void UserMenu(const int& fd, string& _currentUser, bool& status)
 {
     string username, password;
-    int menuOperator;
-    
+    int menuOperator;    
+
     std::cout << "Welcome user: " << _currentUser << "\nPlease choose your option:\n";
-    std::cout << "\t1 - Show Messages\n"
+    std::cout << "\t1 - Refresh\n"
         << "\t2 - Send Message\n"
         << "\t3 - Show Users\n"
         << "\t4 - Delete User\n"
@@ -302,8 +300,6 @@ void UserMenu(const int& fd, string& _currentUser, bool& status)
         break;
     case 1:
     {
-        std::cout << "Messages: \n";
-        CheckMessage(fd, _currentUser);
         break;
     }
     case 2:
@@ -352,5 +348,5 @@ void UserMenu(const int& fd, string& _currentUser, bool& status)
         std::cout << "Wrong statement!\n";
         break;
     }
-
+    
 }

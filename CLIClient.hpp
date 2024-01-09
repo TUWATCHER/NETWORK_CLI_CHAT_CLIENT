@@ -13,7 +13,6 @@ struct sockaddr_in serveraddress;
 char *end;
 int socket_file_descriptor;
 
-
 void Connect(string& _currentUser, bool& status, string& addr)
 { 
 
@@ -75,8 +74,7 @@ void Connect(string& _currentUser, bool& status, string& addr)
             if (bytes_received < 1) {
                 printf("Connection closed by peer.\n");
                 break;
-            }
-            
+            }            
            // printf("%.*s", bytes_received, read);
         }
 
@@ -88,16 +86,19 @@ void Connect(string& _currentUser, bool& status, string& addr)
         #endif            
             if (status)
             {
-                UserMenu(socket_file_descriptor, _currentUser, status);
+                std::thread messageChecker(CheckMessage, std::ref(socket_file_descriptor), std::ref(_currentUser));
+                messageChecker.join();
+                std::thread messageReader(ReadMessage);
+                messageReader.join();
+                UserMenu(socket_file_descriptor, _currentUser, status);                
             }
             else
             {
                 LoginMenu(socket_file_descriptor, _currentUser, status);
-            }
-            
+            }           
             
         }
-    } //END WHILE(TRUE)
+    } //END WHILE(Terminate!)
 
     printf("Closing socket...\n");
     close(socket_file_descriptor);
