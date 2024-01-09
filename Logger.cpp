@@ -4,7 +4,7 @@ Logger::Logger(std::string filename)
 {    
     try
     {
-        logfile.open(filename, std::ios_base::in | std::ios_base::out | std::ios::app);        
+        logfile.open(filename, std::ios::trunc | std::ios_base::out | std::ios_base::in);        
     }
     catch(const std::exception& e)
     {
@@ -23,7 +23,6 @@ Logger::~Logger()
 void Logger::readLog()
 {
     shared_mutex.lock_shared();
-    logfile.seekp(0);
     std::list<std::string> loglines;
     std::string line;
     if (logfile.is_open())
@@ -34,18 +33,17 @@ void Logger::readLog()
         }
         std::cout << loglines.back() << std::endl;
     }
-    logfile.seekg(0, std::ios::end);
+    logfile.seekp(0, std::ios::end);
     shared_mutex.unlock_shared();
 }
 
 void Logger::writeLog(std::string message)
 {
     shared_mutex.lock();
-    logfile.seekg(0, std::ios::end);
     if (logfile.is_open())
     {
-        logfile << message;      
+        logfile << message;
+        logfile.seekg(0, std::ios::beg);      
     }
-    logfile.seekp(0);
     shared_mutex.unlock();
 }
