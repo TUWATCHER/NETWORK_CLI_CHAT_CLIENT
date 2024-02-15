@@ -16,8 +16,6 @@ char serverResponse[MESSAGE_LENGTH];
 
 struct User
 {
-    User() : _username(""), _password(""),
-            _status(false) {}
     std::string _username;
     std::string _password;
     bool _status;
