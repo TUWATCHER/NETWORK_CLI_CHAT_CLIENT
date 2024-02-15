@@ -3,10 +3,9 @@
 int main()
 {
     std::string addr = "10.10.100.177";
-    bool hasLoggedIn = false;
-    std::string currentUser = "";
+    User _currentUser;
 
-    Connect(currentUser, hasLoggedIn, addr);
+    Connect(_currentUser, addr);
 
     return 0;
 }

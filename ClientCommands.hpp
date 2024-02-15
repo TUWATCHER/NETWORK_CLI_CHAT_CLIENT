@@ -14,20 +14,30 @@ static bool Terminator = false;
 char clientRequest[MESSAGE_LENGTH];
 char serverResponse[MESSAGE_LENGTH];
 
-void Register(const int& fd, const std::string& username, const std::string& password);
-bool Login(const int& fd, const std::string& username, const std::string& password);
-void LoginMenu(const int& fd, string& _currentUser, bool& status);
-void UserMenu(const int& fd, string& _currentUser, bool& status);
-void LogOut(string& _currentUser, bool& status);
-void DeleteUser(const int& fd, string& _currentUser, bool& status);
+struct User
+{
+    User() : _username(""), _password(""),
+            _status(false) {}
+    std::string _username;
+    std::string _password;
+    bool _status;
+};
+
+void Register(const int& fd, const User& _currentUser);
+void Login(const int& fd, User& _currentUser);
+void LoginMenu(const int& fd, User& _currentUser);
+void UserMenu(const int& fd, User& _currentUser);
+void LogOut(User& _currentUser);
+void DeleteUser(const int& fd, User& _currentUser);
 void SendMessage(const int& fd, const string& fromUser);
 void CheckMessage(const int& fd, const string& _currentUser);
 void ShowUsers(const int& fd);
 
-void Register(const int& fd, const std::string& username, const std::string& password)
+void Register(const int& fd, const User& _currentUser)
 {
     std::cout << "Registering user!\n";
-    std::string UID = "101#UIDB#" + username + "#UIDE#PWDB#" + password + "#PWDE#";
+    std::string UID = "101#UIDB#" + _currentUser._username +
+                    "#UIDE#PWDB#" + _currentUser._password + "#PWDE#";
     std::cout << "UID: " << UID << std::endl;
 
     bzero(clientRequest, sizeof(clientRequest)); 
@@ -59,12 +69,13 @@ void Register(const int& fd, const std::string& username, const std::string& pas
         std::cout << "Failed to parse response from server\n";
     }
 }
-bool Login(const int& fd, const std::string& username, const std::string& password)
+void Login(const int& fd, User& _currentUser)
 {
     std::cout << "Logging user!\n";
-    std::string UID = "111#UIDB#" + username + "#UIDE#PWDB#" + password + "#PWDE#";
+    std::string UID = "111#UIDB#" + _currentUser._username + 
+                    "#UIDE#PWDB#" + _currentUser._password + "#PWDE#";
     std::cout << "UID: " << UID << std::endl;
-    int32_t securityToken = 0;
+
 
     bzero(clientRequest, sizeof(clientRequest)); 
     strncpy(clientRequest, UID.c_str(), sizeof(clientRequest));       
@@ -85,25 +96,26 @@ bool Login(const int& fd, const std::string& username, const std::string& passwo
     if (strncmp("1111", serverResponse, 4) == 0)
     {
         std::cout << "User has logged in!\n";
-        return true;                      
+        _currentUser._status = true;                     
     }    
     else 
     {
         std::cout << "User failed to log in!\n";
-        return false;
+        _currentUser._status = false;
     }
 }
 
-void LogOut(string& _currentUser, bool& status)
+void LogOut(User& _currentUser)
 {
-    _currentUser = "";
-    status = false;
+    _currentUser._username = "";
+    _currentUser._password = "";
+    _currentUser._status = false;
 }
 
-void DeleteUser(const int& fd, string& _currentUser, bool& status)
+void DeleteUser(const int& fd, User& _currentUser)
 {
-    std::cout << "Deleting user " << _currentUser << std::endl;
-    std::string UID = "000#UIDB#" + _currentUser;
+    std::cout << "Deleting user " << _currentUser._username << std::endl;
+    std::string UID = "000#UIDB#" + _currentUser._username;
     std::cout << "UID: " << UID << std::endl;
 
     bzero(clientRequest, sizeof(clientRequest)); 
@@ -125,7 +137,7 @@ void DeleteUser(const int& fd, string& _currentUser, bool& status)
     if (strncmp("0001", serverResponse, 4) == 0)
     {
         std::cout << "User has been deleted!\n";     
-        status = false;                 
+        LogOut(_currentUser);                
     }    
     else 
     {
@@ -207,9 +219,8 @@ void ShowUsers(const int & fd)
     std::cout << serverResponse;
 }
 
-void LoginMenu(const int& fd, string& _currentUser, bool& status)
+void LoginMenu(const int& fd, User& _currentUser)
 {
-    std::string username, password;
     int menuOperator = 0;
     std::cout << "Welcome to CLI Chat, please choose your option:\n";
     std::cout << "\t0 - Exit\n"
@@ -235,33 +246,28 @@ void LoginMenu(const int& fd, string& _currentUser, bool& status)
         break;
     case 1:
         std::cout << "Please enter username: ";
-        std::cin >> username;
+        std::cin >> _currentUser._username;
         std::cout << "Please enter password: ";
-        std::cin >> password;
-        Register(fd, username, password);
+        std::cin >> _currentUser._password;
+        Register(fd, _currentUser);
         break;
     case 2:      
         std::cout << "Please enter username: ";
-        std::cin >> username;
+        std::cin >> _currentUser._username;
         std::cout << "Please enter password: ";
-        std::cin >> password;
-        status = Login(fd, username, password);
-        if (status)
-        {
-            _currentUser = username;
-        }
+        std::cin >> _currentUser._password;
+        Login(fd, _currentUser);
         break;
     default:
         std::cout << "Wrong statement!\n";
         break;
     }
 }
-void UserMenu(const int& fd, string& _currentUser, bool& status)
+void UserMenu(const int& fd, User& _currentUser)
 {
-    string username, password;
     int menuOperator;
     
-    std::cout << "Welcome user: " << _currentUser << "\nPlease choose your option:\n";
+    std::cout << "Welcome user: " << _currentUser._username << "\nPlease choose your option:\n";
     std::cout << "\t1 - Show Messages\n"
         << "\t2 - Send Message\n"
         << "\t3 - Show Users\n"
@@ -278,13 +284,13 @@ void UserMenu(const int& fd, string& _currentUser, bool& status)
     case 1:
     {
         std::cout << "Messages: \n";
-        CheckMessage(fd, _currentUser);
+        CheckMessage(fd, _currentUser._username);
         break;
     }
     case 2:
     {
         std::cout << "Send message\n";
-        SendMessage(fd, _currentUser);
+        SendMessage(fd, _currentUser._username);
         break;
     }
     case 3:
@@ -301,21 +307,21 @@ void UserMenu(const int& fd, string& _currentUser, bool& status)
         
         if (toupper(choise) == 'Y')
         {
-            DeleteUser(fd, _currentUser, status);            
+            DeleteUser(fd, _currentUser);            
             break;         
         }
         break;
     }
     case 5:
     {
+        //Change password not impemented!
         std::cout << "Please enter old password: ";
-        std::cin >> password;
         break;
     }
     case 6:
     {
         std::cout << "You have loged out\n";
-        LogOut(_currentUser, status);
+        LogOut(_currentUser);
         break;
     }
     default:

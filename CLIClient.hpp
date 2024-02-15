@@ -14,7 +14,7 @@ char *end;
 int socket_file_descriptor;
 
 
-void Connect(string& _currentUser, bool& status, string& addr)
+void Connect(User& _currentUser, string& addr)
 { 
 
     socket_file_descriptor = socket(AF_INET, SOCK_STREAM, 0);
@@ -86,13 +86,13 @@ void Connect(string& _currentUser, bool& status, string& addr)
         if(FD_ISSET(0, &reads))
         {
         #endif            
-            if (status)
+            if (_currentUser._status)
             {
-                UserMenu(socket_file_descriptor, _currentUser, status);
+                UserMenu(socket_file_descriptor, _currentUser);
             }
             else
             {
-                LoginMenu(socket_file_descriptor, _currentUser, status);
+                LoginMenu(socket_file_descriptor, _currentUser);
             }
             
             
